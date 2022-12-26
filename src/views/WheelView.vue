@@ -1,5 +1,11 @@
 <script setup>
-var options = ["hello", "aaa"];
+import { ref, onMounted } from 'vue'
+
+const itemInput = ref('')
+const wheelName = ref('default')
+var storedWheels;
+
+var options = [];
 
 var startAngle = 0;
 var arc = Math.PI / (options.length / 2);
@@ -11,7 +17,6 @@ var spinTime = 0;
 var spinTimeTotal = 0;
 
 var ctx;
-
 
 function byte2Hex(n) {
     var nybHexString = "0123456789ABCDEF";
@@ -50,7 +55,6 @@ function drawRouletteWheel() {
         ctx.lineWidth = 2;
 
         ctx.font = 'bold 12px Helvetica, Arial';
-
         for (var i = 0; i < options.length; i++) {
             var angle = startAngle + i * arc;
             //ctx.fillStyle = colors[i];
@@ -127,38 +131,76 @@ function easeOut(t, b, c, d) {
     var tc = ts * t;
     return b + c * (tc + -3 * ts + 3 * t);
 }
-window.onload = function () {
-    document.getElementById("spin").addEventListener("click", spin);
+
+function addItemToWheel() {
+    var arrayItems = itemInput.value.replace(/\s/g, '').trim().split(",");
+    options.push(...arrayItems);
+    //options.push(itemInput.value);
+    redrawWheel();
+}
+
+function redrawWheel() {
+    arc = Math.PI / (options.length / 2);
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
     drawRouletteWheel();
-};
+}
+
+function spinWheel() {
+    console.log("Spin wheel");
+    spin();
+}
+
+function saveItems() {
+    storedWheels = JSON.parse(localStorage.getItem("randomixWheels"));
+    if (storedWheels == null) {
+        storedWheels = {};
+    }
+    storedWheels[wheelName.value] = options;
+    localStorage["randomixWheels"] = JSON.stringify(storedWheels);
+}
+
+function loadItems() {
+    try {
+        storedWheels = JSON.parse(localStorage.getItem("randomixWheels"));
+        if (storedWheels != null) {
+            options = storedWheels["default"]; //default wheel has empty name
+            redrawWheel();
+        }
+    } catch (jsonError) {
+        console.log(jsonError);
+    }
+}
+
+onMounted(() => {
+    drawRouletteWheel();
+    loadItems();
+});
+
 </script>
 
 <template>
 
     <div>
-        <input type="button" value="spin" style="float:left;" id='spin' />
+        <label>Wheel name</label>
+        <input type="text" v-model="wheelName" />
+        <select>
+            <option v-for="item in storedWheels" :value=item>
+                {{ item }}
+            </option>
+        </select>
+    </div>
+
+    <br />
+
+    <div>
+        <input type="button" value="spin" @click='spinWheel' />
+        <input type="button" value="save" @click="saveItems" />
         <form>
-            <input type="text" v-model="itemInput"/>
-            <input type="button" value="Add to wheel" @click="addItemButton"/>
+            <input type="text" v-model="itemInput" />
+            <input type="button" value="Add to wheel" @click="addItemToWheel" />
         </form>
-        <canvas id="canvas" width="500" height="500"></canvas>
+        <canvas ref="canvas" id="canvas" width="500" height="500"></canvas>
     </div>
 
 </template>
-
-<script>
-
-export default{
-    data(){
-        return {
-            itemInput: ""
-        }
-    },
-    methods: {
-        addItemButton(){
-            console.log(this.itemInput);
-        }
-    }
-}
-
-</script>
