@@ -1,9 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { Toast } from 'bootstrap'
 
 const itemInput = ref('')
 const wheelName = ref('default')
-var storedWheels;
+const storedWheels = ref([]);
+const toastMessage = ref('')
 
 var options = [];
 
@@ -152,19 +154,21 @@ function spinWheel() {
 }
 
 function saveItems() {
-    storedWheels = JSON.parse(localStorage.getItem("randomixWheels"));
-    if (storedWheels == null) {
-        storedWheels = {};
+    storedWheels.value = JSON.parse(localStorage.getItem("randomixWheels"));
+    if (storedWheels.value == null) {
+        storedWheels.value = {};
     }
-    storedWheels[wheelName.value] = options;
-    localStorage["randomixWheels"] = JSON.stringify(storedWheels);
+    storedWheels.value[wheelName.value] = options;
+    localStorage["randomixWheels"] = JSON.stringify(storedWheels.value);
+    showToast("Modifications saved")
 }
 
-function loadItems() {
+function loadItemsFromWheel(wheelToLoad) {
+    wheelName.value = wheelToLoad;
     try {
-        storedWheels = JSON.parse(localStorage.getItem("randomixWheels"));
-        if (storedWheels != null) {
-            options = storedWheels["default"]; //default wheel has empty name
+        storedWheels.value = JSON.parse(localStorage.getItem("randomixWheels"));
+        if (storedWheels.value != null) {
+            options = storedWheels.value[wheelToLoad]; //default wheel has empty name
             redrawWheel();
         }
     } catch (jsonError) {
@@ -172,35 +176,102 @@ function loadItems() {
     }
 }
 
+function deleteItemFromList(item) {
+    options.splice(options.indexOf(item), 1);
+    redrawWheel();
+}
+
+function showToast(message) {
+    toastMessage.value = message;
+    const toastLiveExample = document.getElementById('liveToast')
+    const toast = new Toast(toastLiveExample)
+    toast.show()
+}
+
 onMounted(() => {
     drawRouletteWheel();
-    loadItems();
+    loadItemsFromWheel("default");
 });
 
 </script>
 
 <template>
 
-    <div>
-        <label>Wheel name</label>
-        <input type="text" v-model="wheelName" />
-        <select>
-            <option v-for="item in storedWheels" :value=item>
-                {{ item }}
-            </option>
-        </select>
-    </div>
+    <div class="container">
 
-    <br />
+        <div class="row">
 
-    <div>
-        <input type="button" value="spin" @click='spinWheel' />
-        <input type="button" value="save" @click="saveItems" />
-        <form>
-            <input type="text" v-model="itemInput" />
-            <input type="button" value="Add to wheel" @click="addItemToWheel" />
-        </form>
-        <canvas ref="canvas" id="canvas" width="500" height="500"></canvas>
+            <div class="col-4" id="configCol">
+                <div class="row">
+                    <div class="col">
+                        <div class="input-group">
+                            <input type="text" v-model="wheelName" class="form-control"
+                                aria-label="Text input with dropdown button">
+                            <button v-if="Object.keys(storedWheels).filter(i => i != wheelName).length > 0"
+                                class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                                aria-expanded="false"></button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li v-for="item in Object.keys(storedWheels).filter(i => i != wheelName)">
+                                    <a @click="loadItemsFromWheel(item)" class="dropdown-item">{{ item }}</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <button type="button" @click="saveItems" class="btn btn-primary">Save</button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        <ul class="list-group">
+                            <li v-for="itemOption in options"
+                                class="list-group-item d-flex justify-content-between align-items-center">{{
+        itemOption
+}}
+                                <button @click="deleteItemFromList(itemOption)" type="button"
+                                    class="btn-close btn-sm delete-list-item" aria-label="Close"></button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-8" id="wheelCol">
+                <div class="row">
+                    <div class="col">
+                        <div class="input-group">
+                            <input type="text" v-model="itemInput" class="form-control"
+                                placeholder="Item to add to the wheel" />
+                            <button type="button" @click="addItemToWheel" class="btn btn-primary">Add to wheel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        <button type="button" @click='spinWheel' class="btn btn-primary">Spin</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <!--TODO Move wheel into Wheel.vue and insert wheel component here-->
+                        <canvas ref="canvas" id="canvas" width="500" height="500"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <div id="liveToast" class="toast position-fixed bottom-0 end-0" role="alert" aria-live="assertive"
+                aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        {{ toastMessage }}
+                    </div>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"
+                        aria-label="Close"></button>
+                </div>
+            </div>
+            
+        </div>
     </div>
 
 </template>
