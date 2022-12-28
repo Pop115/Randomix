@@ -7,10 +7,10 @@ const wheelName = ref('default')
 const storedWheels = ref([]);
 const toastMessage = ref('')
 
-var options = [];
+var options = ref([]);
 
 var startAngle = 0;
-var arc = Math.PI / (options.length / 2);
+var arc = Math.PI / (options.value.length / 2);
 var spinTimeout = null;
 
 var spinArcStart = 10;
@@ -57,10 +57,10 @@ function drawRouletteWheel() {
         ctx.lineWidth = 2;
 
         ctx.font = 'bold 12px Helvetica, Arial';
-        for (var i = 0; i < options.length; i++) {
+        for (var i = 0; i < options.value.length; i++) {
             var angle = startAngle + i * arc;
             //ctx.fillStyle = colors[i];
-            ctx.fillStyle = getColor(i, options.length);
+            ctx.fillStyle = getColor(i, options.value.length);
 
             ctx.beginPath();
             ctx.arc(250, 250, outsideRadius, angle, angle + arc, false);
@@ -77,7 +77,7 @@ function drawRouletteWheel() {
             ctx.translate(250 + Math.cos(angle + arc / 2) * textRadius,
                 250 + Math.sin(angle + arc / 2) * textRadius);
             ctx.rotate(angle + arc / 2 + Math.PI / 2);
-            var text = options[i];
+            var text = options.value[i];
             ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
             ctx.restore();
         }
@@ -123,7 +123,7 @@ function stopRotateWheel() {
     var index = Math.floor((360 - degrees % 360) / arcd);
     ctx.save();
     ctx.font = 'bold 30px Helvetica, Arial';
-    var text = options[index]
+    var text = options.value[index]
     ctx.fillText(text, 250 - ctx.measureText(text).width / 2, 250 + 10);
     ctx.restore();
 }
@@ -136,13 +136,13 @@ function easeOut(t, b, c, d) {
 
 function addItemToWheel() {
     var arrayItems = itemInput.value.replace(/\s/g, '').trim().split(",");
-    options.push(...arrayItems);
+    options.value.push(...arrayItems);
     //options.push(itemInput.value);
     redrawWheel();
 }
 
 function redrawWheel() {
-    arc = Math.PI / (options.length / 2);
+    arc = Math.PI / (options.value.length / 2);
     const context = canvas.getContext('2d');
     context.clearRect(0, 0, canvas.width, canvas.height);
     drawRouletteWheel();
@@ -158,7 +158,7 @@ function saveItems() {
     if (storedWheels.value == null) {
         storedWheels.value = {};
     }
-    storedWheels.value[wheelName.value] = options;
+    storedWheels.value[wheelName.value] = options.value;
     localStorage["randomixWheels"] = JSON.stringify(storedWheels.value);
     showToast("Modifications saved")
 }
@@ -167,8 +167,13 @@ function loadItemsFromWheel(wheelToLoad) {
     wheelName.value = wheelToLoad;
     try {
         storedWheels.value = JSON.parse(localStorage.getItem("randomixWheels"));
-        if (storedWheels.value != null) {
-            options = storedWheels.value[wheelToLoad]; //default wheel has empty name
+        if(storedWheels.value == null){
+            storedWheels.value = [];
+        }
+        console.log("Found "+Object.keys(storedWheels.value).length+" saved lists")
+        if (Object.keys(storedWheels.value).length > 0) {
+            options.value = storedWheels.value[wheelToLoad];
+            console.log("Found "+options.value.length+" items in list "+wheelName.value)
             redrawWheel();
         }
     } catch (jsonError) {
@@ -177,7 +182,7 @@ function loadItemsFromWheel(wheelToLoad) {
 }
 
 function deleteItemFromList(item) {
-    options.splice(options.indexOf(item), 1);
+    options.value.splice(options.value.indexOf(item), 1);
     redrawWheel();
 }
 
@@ -207,11 +212,10 @@ onMounted(() => {
                         <div class="input-group">
                             <input type="text" v-model="wheelName" class="form-control"
                                 aria-label="Text input with dropdown button">
-                            <button v-if="Object.keys(storedWheels).filter(i => i != wheelName).length > 0"
-                                class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
                                 aria-expanded="false"></button>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li v-for="item in Object.keys(storedWheels).filter(i => i != wheelName)">
+                                <li v-for="item in (storedWheels != null ? Object.keys(storedWheels).filter(i => i != wheelName) : [])">
                                     <a @click="loadItemsFromWheel(item)" class="dropdown-item">{{ item }}</a>
                                 </li>
                             </ul>
@@ -270,7 +274,7 @@ onMounted(() => {
                         aria-label="Close"></button>
                 </div>
             </div>
-            
+
         </div>
     </div>
 
