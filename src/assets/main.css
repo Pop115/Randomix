@@ -16,3 +16,10 @@ canvas {
   display: block;
   margin: auto;
 }
+
+.minuature-color {
+  position: relative;
+  width: 15px;
+  height: 15px;
+  left: 125px;
+}

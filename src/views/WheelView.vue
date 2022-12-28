@@ -135,10 +135,11 @@ function easeOut(t, b, c, d) {
 }
 
 function addItemToWheel() {
-    var arrayItems = itemInput.value.replace(/\s/g, '').trim().split(",");
+    var arrayItems = itemInput.value.trim().split(",");
     options.value.push(...arrayItems);
     //options.push(itemInput.value);
     redrawWheel();
+    itemInput.value = "";
 }
 
 function redrawWheel() {
@@ -193,6 +194,10 @@ function showToast(message) {
     toast.show()
 }
 
+function onEnter() {
+    addItemToWheel();
+}
+
 onMounted(() => {
     drawRouletteWheel();
     loadItemsFromWheel("default");
@@ -227,10 +232,9 @@ onMounted(() => {
                 <div class="row">
                     <div class="col">
                         <ul class="list-group">
-                            <li v-for="itemOption in options"
-                                class="list-group-item d-flex justify-content-between align-items-center">{{
-        itemOption
-}}
+                            <li v-for="(itemOption, index) in options" class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>{{itemOption}}</span>
+                                <div class="minuature-color" :style="{'background-color':getColor(index, options.length)}"></div>
                                 <button @click="deleteItemFromList(itemOption)" type="button"
                                     class="btn-close btn-sm delete-list-item" aria-label="Close"></button>
                             </li>
@@ -244,7 +248,7 @@ onMounted(() => {
                     <div class="col">
                         <div class="input-group">
                             <input type="text" v-model="itemInput" class="form-control"
-                                placeholder="Item to add to the wheel" />
+                                placeholder="Item to add to the wheel" v-on:keyup.enter="onEnter" />
                             <button type="button" @click="addItemToWheel" class="btn btn-primary">Add to wheel</button>
                         </div>
                     </div>
