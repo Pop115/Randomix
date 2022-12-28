@@ -232,7 +232,7 @@ onMounted(() => {
                 <div class="row">
                     <div class="col">
                         <ul class="list-group">
-                            <li v-for="(itemOption, index) in options" class="list-group-item d-flex justify-content-between align-items-center">
+                            <li v-for="(itemOption, index) in options" class="list-group-item d-flex justify-content-between align-items-center roulette-item-list">
                                 <span>{{itemOption}}</span>
                                 <div class="minuature-color" :style="{'background-color':getColor(index, options.length)}"></div>
                                 <button @click="deleteItemFromList(itemOption)" type="button"

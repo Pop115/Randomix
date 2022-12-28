@@ -17,9 +17,15 @@ canvas {
   margin: auto;
 }
 
-.minuature-color {
+.roulette-item-list {
   position: relative;
+}
+
+.minuature-color {
+  position: absolute;
+  right: 50px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 15px;
   height: 15px;
-  left: 125px;
 }
